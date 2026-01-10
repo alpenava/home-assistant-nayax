@@ -53,6 +53,7 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.entry = entry
         self._machines: dict[str, dict[str, Any]] = {}
         self._last_transactions: dict[str, str] = {}
+        self._last_sales_data: dict[str, dict[str, Any]] = {}
         self._last_machine_discovery: float = 0
         self._machine_discovery_interval = DEFAULT_MACHINE_DISCOVERY_INTERVAL
 
@@ -61,16 +62,27 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def _load_persisted_state(self) -> None:
         """Load persisted state from config entry."""
-        stored_data = self.entry.data.get("last_transactions", {})
-        if isinstance(stored_data, dict):
-            self._last_transactions = stored_data.copy()
+        stored_transactions = self.entry.data.get("last_transactions", {})
+        if isinstance(stored_transactions, dict):
+            self._last_transactions = stored_transactions.copy()
             _LOGGER.debug(
                 "Loaded %d persisted transaction IDs", len(self._last_transactions)
             )
 
+        stored_sales = self.entry.data.get("last_sales_data", {})
+        if isinstance(stored_sales, dict):
+            self._last_sales_data = stored_sales.copy()
+            _LOGGER.debug(
+                "Loaded %d persisted last sale records", len(self._last_sales_data)
+            )
+
     async def _persist_state(self) -> None:
         """Persist current state to config entry."""
-        new_data = {**self.entry.data, "last_transactions": self._last_transactions}
+        new_data = {
+            **self.entry.data,
+            "last_transactions": self._last_transactions,
+            "last_sales_data": self._last_sales_data,
+        }
         self.hass.config_entries.async_update_entry(self.entry, data=new_data)
 
     async def _async_update_data(self) -> dict[str, Any]:
@@ -96,6 +108,7 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return {
                 "machines": self._machines,
                 "last_transactions": self._last_transactions,
+                "last_sales_data": self._last_sales_data,
             }
 
         except NayaxApiError as err:
@@ -232,6 +245,10 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             _LOGGER.warning("Transaction without ID found for machine %s", machine_id)
             return
 
+        # Extract and store sale data for sensors (always, even if not new)
+        sale_data = self._extract_sale_data(machine_id, machine_info, successful_sale)
+        self._last_sales_data[machine_id] = sale_data
+
         # Check if this is a new transaction
         last_seen = self._last_transactions.get(machine_id)
         if last_seen == transaction_id:
@@ -279,20 +296,22 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             _LOGGER.warning("Invalid settlement value: %s", value)
             return None
 
-    def _fire_sale_event(
+    def _extract_sale_data(
         self,
         machine_id: str,
         machine_info: dict[str, Any],
         sale: dict[str, Any],
-    ) -> None:
-        """Fire a Home Assistant event for a new sale.
+    ) -> dict[str, Any]:
+        """Extract sale data for sensors.
 
         Args:
             machine_id: The machine ID.
             machine_info: Machine information dictionary.
             sale: Sale transaction data.
+
+        Returns:
+            Dictionary with extracted sale data.
         """
-        # Extract sale details - handle different API response formats
         transaction_id = str(
             sale.get("TransactionID")
             or sale.get("transactionId")
@@ -335,7 +354,7 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             or ""
         )
 
-        event_data = {
+        return {
             "machine_id": machine_id,
             "machine_name": machine_info.get("name", f"Machine {machine_id}"),
             "transaction_id": transaction_id,
@@ -344,6 +363,26 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "product_name": product_name,
             "payment_method": payment_method,
             "timestamp": timestamp,
+        }
+
+    def _fire_sale_event(
+        self,
+        machine_id: str,
+        machine_info: dict[str, Any],
+        sale: dict[str, Any],
+    ) -> None:
+        """Fire a Home Assistant event for a new sale.
+
+        Args:
+            machine_id: The machine ID.
+            machine_info: Machine information dictionary.
+            sale: Sale transaction data.
+        """
+        # Get the already extracted sale data
+        sale_data = self._last_sales_data.get(machine_id, {})
+
+        event_data = {
+            **sale_data,
             "raw": sale,
         }
 
@@ -352,14 +391,30 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         _LOGGER.debug(
             "Fired %s event: %s - %s %s for %s",
             EVENT_NAYAX_SALE,
-            machine_info.get("name", machine_id),
-            amount,
-            currency,
-            product_name,
+            sale_data.get("machine_name", machine_id),
+            sale_data.get("amount", 0),
+            sale_data.get("currency", "EUR"),
+            sale_data.get("product_name", "Unknown"),
         )
 
     @property
     def machines(self) -> dict[str, dict[str, Any]]:
         """Get the current machines."""
         return self._machines
+
+    @property
+    def last_sales_data(self) -> dict[str, dict[str, Any]]:
+        """Get the last sale data for all machines."""
+        return self._last_sales_data
+
+    def get_last_sale(self, machine_id: str) -> dict[str, Any] | None:
+        """Get the last sale data for a specific machine.
+
+        Args:
+            machine_id: The machine ID.
+
+        Returns:
+            Sale data dictionary or None if no data available.
+        """
+        return self._last_sales_data.get(machine_id)
 

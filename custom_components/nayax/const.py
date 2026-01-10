@@ -25,3 +25,12 @@ EVENT_NAYAX_SALE: Final = "nayax_sale"
 MANUFACTURER: Final = "Nayax"
 MODEL: Final = "Vending Machine"
 
+# Sensor types
+SENSOR_TYPE_LAST_SALE_AMOUNT: Final = "last_sale_amount"
+SENSOR_TYPE_LAST_SALE_PRODUCT: Final = "last_sale_product"
+SENSOR_TYPE_LAST_SALE_TIME: Final = "last_sale_time"
+SENSOR_TYPE_LAST_TRANSACTION_ID: Final = "last_transaction_id"
+
+# Attribution
+ATTRIBUTION: Final = "Data provided by Nayax Lynx API"
+

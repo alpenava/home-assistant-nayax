@@ -21,9 +21,8 @@ from .coordinator import NayaxCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-# No platforms needed for MVP - we only fire events
-# Can add Platform.SENSOR here later for phase 2
-PLATFORMS: list[Platform] = []
+# Platforms to set up
+PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -74,7 +73,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "client": client,
     }
 
-    # Set up platforms (none for MVP)
+    # Set up platforms (sensors)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     # Register options update listener
