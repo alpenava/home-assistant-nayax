@@ -30,10 +30,12 @@
       "init": {
         "title": "Nayax Options",
         "data": {
-          "poll_interval": "Polling Interval (seconds)"
+          "poll_interval": "Polling Interval (seconds)",
+          "include_raw_data": "Include raw transaction data in events"
         },
         "data_description": {
-          "poll_interval": "How often to check for new sales (10-300 seconds)"
+          "poll_interval": "How often to check for new sales (10-300 seconds)",
+          "include_raw_data": "When enabled, the full Nayax transaction object is included in nayax_sale events"
         }
       }
     }

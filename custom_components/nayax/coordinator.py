@@ -14,6 +14,8 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .api import NayaxApiClient, NayaxApiError
 from .const import (
+    CONF_INCLUDE_RAW_DATA,
+    DEFAULT_INCLUDE_RAW_DATA,
     DEFAULT_MACHINE_DISCOVERY_INTERVAL,
     DEFAULT_POLL_INTERVAL,
     DOMAIN,
@@ -367,6 +369,12 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 list(sale.keys())
             )
 
+        site_name = (
+            sale.get("SiteName")
+            or sale.get("siteName")
+            or None
+        )
+
         return {
             "machine_id": machine_id,
             "machine_name": machine_info.get("name", f"Machine {machine_id}"),
@@ -376,6 +384,7 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "product_name": product_name,
             "payment_method": payment_method,
             "timestamp": timestamp,
+            "site_name": site_name,
         }
 
     def _fire_sale_event(
@@ -394,20 +403,26 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Get the already extracted sale data
         sale_data = self._last_sales_data.get(machine_id, {})
 
-        event_data = {
-            **sale_data,
-            "raw": sale,
-        }
+        # Build event data
+        event_data = {**sale_data}
+
+        # Conditionally include raw transaction data based on config option
+        include_raw = self.entry.options.get(
+            CONF_INCLUDE_RAW_DATA, DEFAULT_INCLUDE_RAW_DATA
+        )
+        if include_raw:
+            event_data["raw"] = sale
 
         self.hass.bus.async_fire(EVENT_NAYAX_SALE, event_data)
 
         _LOGGER.debug(
-            "Fired %s event: %s - %s %s for %s",
+            "Fired %s event: %s - %s %s for %s (raw=%s)",
             EVENT_NAYAX_SALE,
             sale_data.get("machine_name", machine_id),
             sale_data.get("amount", 0),
             sale_data.get("currency", "EUR"),
             sale_data.get("product_name", "Unknown"),
+            include_raw,
         )
 
     @property

@@ -107,7 +107,10 @@ When a successful sale occurs, the integration fires a `nayax_sale` event with t
 | `product_name` | Product sold | `"Haribo Fruchtgummi Pommes Sauer"` |
 | `payment_method` | Payment type | `"Credit Card"` |
 | `timestamp` | Transaction time (GMT) | `"2026-01-08T14:29:30.347"` |
-| `raw` | Full Nayax transaction object | `{...}` |
+| `site_name` | Site/location name | `"DE"` |
+| `raw` | Full Nayax transaction object (optional) | `{...}` |
+
+> **Note:** The `raw` field is included by default but can be disabled in the integration options to reduce event payload size.
 
 ### Automation Examples
 
@@ -185,12 +188,19 @@ automation:
 
 ## Options
 
-After setup, you can change the polling interval:
+After setup, you can configure the integration:
 
 1. Go to **Settings → Devices & Services**
 2. Find the Nayax integration
 3. Click **Configure**
-4. Adjust the **Polling Interval**
+4. Adjust the available options:
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| **Polling Interval** | How often to check for new sales (10-300 seconds) | 30 |
+| **Include raw transaction data** | Include the full Nayax transaction object in events | Enabled |
+
+> **Tip:** Disable "Include raw transaction data" if you only need the extracted fields and want smaller event payloads for Node-RED or other automation tools.
 
 ## Troubleshooting
 

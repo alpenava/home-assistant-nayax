@@ -13,10 +13,12 @@ API_LAST_SALES_ENDPOINT: Final = "/operational/v1/machines/{machine_id}/lastSale
 CONF_ACTOR_ID: Final = "actor_id"
 CONF_API_TOKEN: Final = "api_token"
 CONF_POLL_INTERVAL: Final = "poll_interval"
+CONF_INCLUDE_RAW_DATA: Final = "include_raw_data"
 
 # Default values
 DEFAULT_POLL_INTERVAL: Final = 30  # seconds
 DEFAULT_MACHINE_DISCOVERY_INTERVAL: Final = 300  # 5 minutes
+DEFAULT_INCLUDE_RAW_DATA: Final = True  # Include raw transaction in events
 
 # Event names
 EVENT_NAYAX_SALE: Final = "nayax_sale"

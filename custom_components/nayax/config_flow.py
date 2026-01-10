@@ -16,7 +16,9 @@ from .api import NayaxApiClient, NayaxAuthError, NayaxConnectionError
 from .const import (
     CONF_ACTOR_ID,
     CONF_API_TOKEN,
+    CONF_INCLUDE_RAW_DATA,
     CONF_POLL_INTERVAL,
+    DEFAULT_INCLUDE_RAW_DATA,
     DEFAULT_POLL_INTERVAL,
     DOMAIN,
 )
@@ -120,6 +122,12 @@ class NayaxOptionsFlow(OptionsFlow):
                             CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL
                         ),
                     ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
+                    vol.Optional(
+                        CONF_INCLUDE_RAW_DATA,
+                        default=self.config_entry.options.get(
+                            CONF_INCLUDE_RAW_DATA, DEFAULT_INCLUDE_RAW_DATA
+                        ),
+                    ): bool,
                 }
             ),
         )
