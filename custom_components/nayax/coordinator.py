@@ -117,7 +117,8 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         for machine in machines_data:
             # Extract machine info - handle different API response formats
             machine_id = str(
-                machine.get("MachineId")
+                machine.get("MachineID")
+                or machine.get("MachineId")
                 or machine.get("machineId")
                 or machine.get("id")
                 or ""
