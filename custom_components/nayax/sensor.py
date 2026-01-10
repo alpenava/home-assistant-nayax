@@ -16,7 +16,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CURRENCY_EURO
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -33,6 +33,9 @@ from .const import (
 from .coordinator import NayaxCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+# Sentinel value to detect first update (distinct from None)
+_UNSET: Any = object()
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -184,11 +187,31 @@ class NayaxSensor(CoordinatorEntity[NayaxCoordinator], SensorEntity):
         self._machine_id = machine_id
         self._machine_name = machine_name
 
+        # Track previous value to avoid unnecessary state updates
+        # Use sentinel to ensure first update always writes state
+        self._previous_value: Any = _UNSET
+
         # Create unique ID
         self._attr_unique_id = f"{DOMAIN}_{machine_id}_{description.key}"
 
         # Set entity name (will be combined with device name)
         self._attr_name = description.name
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator.
+
+        Always writes state on the first update (even if None).
+        On subsequent updates, only writes state if the value changed.
+        This prevents unnecessary state updates for machines that
+        didn't receive new transactions.
+        """
+        current_value = self.native_value
+
+        # Write state if first update (previous is sentinel) or value changed
+        if self._previous_value is _UNSET or current_value != self._previous_value:
+            self._previous_value = current_value
+            self.async_write_ha_state()
 
     @property
     def device_info(self) -> dict[str, Any]:
