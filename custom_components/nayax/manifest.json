@@ -1,0 +1,12 @@
+{
+  "domain": "nayax",
+  "name": "Nayax Vending Machines",
+  "version": "1.0.0",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/alpenava/home-assistant-nayax",
+  "iot_class": "cloud_polling",
+  "requirements": []
+}
+

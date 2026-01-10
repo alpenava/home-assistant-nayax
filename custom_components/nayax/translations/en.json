@@ -1,0 +1,42 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Nayax",
+        "description": "Enter your Nayax Lynx API credentials. Machines will be discovered automatically.",
+        "data": {
+          "actor_id": "Actor ID",
+          "api_token": "API Token",
+          "poll_interval": "Polling Interval (seconds)"
+        },
+        "data_description": {
+          "actor_id": "Your Nayax Actor ID from the Lynx platform",
+          "api_token": "Your Nayax API token",
+          "poll_interval": "How often to check for new sales (10-300 seconds)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Nayax API",
+      "invalid_auth": "Invalid authentication credentials",
+      "unknown": "An unexpected error occurred"
+    },
+    "abort": {
+      "already_configured": "This Nayax account is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Nayax Options",
+        "data": {
+          "poll_interval": "Polling Interval (seconds)"
+        },
+        "data_description": {
+          "poll_interval": "How often to check for new sales (10-300 seconds)"
+        }
+      }
+    }
+  }
+}
+
