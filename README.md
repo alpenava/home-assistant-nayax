@@ -20,12 +20,19 @@ A Home Assistant custom integration that monitors Nayax vending machines via the
 
 ### HACS (Recommended)
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=alpenava&repository=home-assistant-nayax&category=integration)
+
+Or manually:
+
 1. Open HACS in Home Assistant
-2. Click the three dots menu → **Custom repositories**
-3. Add this repository URL and select **Integration** as the category
-4. Click **Add**
-5. Search for "Nayax" in HACS and install it
-6. Restart Home Assistant
+2. Click the three dots menu (⋮) → **Custom repositories**
+3. Add `https://github.com/alpenava/home-assistant-nayax` as the repository URL
+4. Select **Integration** as the category
+5. Click **Add**
+6. Search for "Nayax" in HACS and click **Download**
+7. Restart Home Assistant
+
+> **Note:** Make sure to download from a release version (not a commit) for best compatibility.
 
 ### Manual Installation
 
