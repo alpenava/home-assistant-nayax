@@ -6,6 +6,7 @@ A Home Assistant custom integration that monitors Nayax vending machines via the
 
 - **Automatic Machine Discovery** — Machines are discovered automatically from your Nayax account
 - **Real-time Sale Events** — Fires `nayax_sale` events when successful transactions occur
+- **Sensor Entities** — Track last sale amount, product, time, and transaction ID per machine
 - **Device Integration** — Each vending machine appears as a device in Home Assistant
 - **Configurable Polling** — Adjust how frequently sales are checked (default: 30 seconds)
 - **Persistent State** — Survives Home Assistant restarts without duplicate notifications
@@ -51,7 +52,10 @@ config/
         ├── config_flow.py
         ├── const.py
         ├── coordinator.py
+        ├── sensor.py
         ├── manifest.json
+        ├── icon.png
+        ├── logo.png
         ├── strings.json
         └── translations/
             └── en.json
@@ -70,6 +74,24 @@ config/
 The integration will automatically discover all vending machines associated with your account and register them as devices.
 
 ## Usage
+
+### Sensors
+
+Each vending machine device includes four sensor entities:
+
+| Sensor | Description | Example Value |
+|--------|-------------|---------------|
+| **Last Sale Amount** | Amount of the last successful sale | `2.00` (EUR) |
+| **Last Sale Product** | Product name from last sale | `"Haribo Fruchtgummi"` |
+| **Last Sale Time** | Timestamp of last sale | `2026-01-08T14:29:30` |
+| **Last Transaction ID** | Transaction reference | `"6526108450"` |
+
+Sensors are named like: `sensor.<machine_name>_last_sale_amount`
+
+These sensors:
+- Update every poll cycle (default 30 seconds)
+- Have full history in Home Assistant recorder
+- Can be used in dashboards, automations, and conditions
 
 ### Events
 
@@ -184,6 +206,12 @@ After setup, you can change the polling interval:
 - Check the polling interval isn't set too high
 - Look for errors in the Home Assistant logs
 
+### Sensors show "Unknown" or no data
+
+- Sensors only populate after the first successful sale is detected
+- Ensure there has been at least one sale with SettlementValue > 0
+- Check if the API is returning sales data in the debug logs
+
 ### Enable Debug Logging
 
 Add to your `configuration.yaml`:
@@ -200,8 +228,9 @@ logger:
 1. On startup, the integration calls the Nayax API to discover all machines
 2. Every 30 seconds (configurable), it polls each machine's recent sales
 3. New successful transactions (SettlementValue > 0) trigger `nayax_sale` events
-4. Transaction IDs are tracked to prevent duplicate notifications
-5. Machine discovery runs every 5 minutes to detect new machines
+4. Sensor entities are updated with the latest sale data
+5. Transaction IDs are tracked to prevent duplicate event notifications
+6. Machine discovery runs every 5 minutes to detect new machines
 
 ## Limitations
 

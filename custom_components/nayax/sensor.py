@@ -81,12 +81,26 @@ def _parse_timestamp(timestamp_str: str | None) -> datetime | None:
         timestamp_str: Timestamp string from the API.
 
     Returns:
-        Parsed datetime or None if parsing fails.
+        Parsed datetime (UTC) or None if parsing fails.
     """
     if not timestamp_str:
         return None
 
-    # Try different timestamp formats
+    from datetime import timezone
+
+    # Try fromisoformat first (handles most ISO formats)
+    try:
+        # Handle Z suffix and ensure timezone awareness
+        ts = timestamp_str.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(ts)
+        # If no timezone, assume UTC (API returns GMT)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except ValueError:
+        pass
+
+    # Try additional formats
     formats = [
         "%Y-%m-%dT%H:%M:%S.%f",
         "%Y-%m-%dT%H:%M:%S",
@@ -96,12 +110,11 @@ def _parse_timestamp(timestamp_str: str | None) -> datetime | None:
 
     for fmt in formats:
         try:
-            return datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
+            dt = datetime.strptime(timestamp_str, fmt)
+            # Assume UTC for Nayax timestamps (AuthorizationTimeGMT)
+            return dt.replace(tzinfo=timezone.utc)
         except ValueError:
-            try:
-                return datetime.strptime(timestamp_str, fmt)
-            except ValueError:
-                continue
+            continue
 
     _LOGGER.warning("Could not parse timestamp: %s", timestamp_str)
     return None

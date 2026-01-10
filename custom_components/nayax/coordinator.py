@@ -345,14 +345,27 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
         timestamp = (
-            sale.get("AuthorizationTimeGMT")
+            sale.get("AuthorizationDateTimeGMT")  # Primary field from Nayax API
+            or sale.get("authorizationDateTimeGmt")
+            or sale.get("AuthorizationTimeGMT")
             or sale.get("authorizationTimeGmt")
+            or sale.get("MachineAuthorizationTime")
+            or sale.get("machineAuthorizationTime")
+            or sale.get("SettlementDateTimeGMT")
+            or sale.get("settlementDateTimeGmt")
             or sale.get("Timestamp")
             or sale.get("timestamp")
             or sale.get("DateTime")
             or sale.get("dateTime")
             or ""
         )
+
+        # Log if timestamp wasn't found for debugging
+        if not timestamp:
+            _LOGGER.debug(
+                "No timestamp found in sale data. Available keys: %s",
+                list(sale.keys())
+            )
 
         return {
             "machine_id": machine_id,
