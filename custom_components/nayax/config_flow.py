@@ -99,7 +99,7 @@ class NayaxConfigFlow(ConfigFlow, domain=DOMAIN):
         config_entry,
     ) -> OptionsFlow:
         """Get the options flow for this handler."""
-        return NayaxOptionsFlow(config_entry)
+        return NayaxOptionsFlow()
 
 
 class NayaxOptionsFlow(OptionsFlow):
