@@ -7,12 +7,14 @@
         "data": {
           "actor_id": "Actor ID",
           "api_token": "API Token",
-          "poll_interval": "Polling Interval (seconds)"
+          "poll_interval": "Polling Interval (seconds)",
+          "first_day_of_week": "First Day of Week"
         },
         "data_description": {
           "actor_id": "Your Nayax Actor ID from the Lynx platform",
           "api_token": "Your Nayax API token",
-          "poll_interval": "How often to check for new sales (10-300 seconds)"
+          "poll_interval": "How often to check for new sales (10-300 seconds)",
+          "first_day_of_week": "Start of week for weekly sales totals"
         }
       }
     },
@@ -31,12 +33,27 @@
         "title": "Nayax Options",
         "data": {
           "poll_interval": "Polling Interval (seconds)",
-          "include_raw_data": "Include raw transaction data in events"
+          "include_raw_data": "Include raw transaction data in events",
+          "first_day_of_week": "First Day of Week"
         },
         "data_description": {
           "poll_interval": "How often to check for new sales (10-300 seconds)",
-          "include_raw_data": "When enabled, the full Nayax transaction object is included in nayax_sale events"
+          "include_raw_data": "When enabled, the full Nayax transaction object is included in nayax_sale events",
+          "first_day_of_week": "Start of week for weekly sales totals"
         }
+      }
+    }
+  },
+  "selector": {
+    "first_day_of_week": {
+      "options": {
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday"
       }
     }
   }

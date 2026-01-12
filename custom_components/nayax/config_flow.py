@@ -16,11 +16,14 @@ from .api import NayaxApiClient, NayaxAuthError, NayaxConnectionError
 from .const import (
     CONF_ACTOR_ID,
     CONF_API_TOKEN,
+    CONF_FIRST_DAY_OF_WEEK,
     CONF_INCLUDE_RAW_DATA,
     CONF_POLL_INTERVAL,
+    DEFAULT_FIRST_DAY_OF_WEEK,
     DEFAULT_INCLUDE_RAW_DATA,
     DEFAULT_POLL_INTERVAL,
     DOMAIN,
+    WEEKDAY_OPTIONS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -31,6 +34,9 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_API_TOKEN): str,
         vol.Optional(CONF_POLL_INTERVAL, default=DEFAULT_POLL_INTERVAL): vol.All(
             vol.Coerce(int), vol.Range(min=10, max=300)
+        ),
+        vol.Optional(CONF_FIRST_DAY_OF_WEEK, default="monday"): vol.In(
+            list(WEEKDAY_OPTIONS.keys())
         ),
     }
 )
@@ -74,6 +80,10 @@ class NayaxConfigFlow(ConfigFlow, domain=DOMAIN):
                 # Create a descriptive title
                 title = f"Nayax ({user_input[CONF_ACTOR_ID]})"
 
+                # Convert weekday name to number
+                first_dow_name = user_input.get(CONF_FIRST_DAY_OF_WEEK, "monday")
+                first_dow_value = WEEKDAY_OPTIONS.get(first_dow_name, DEFAULT_FIRST_DAY_OF_WEEK)
+
                 return self.async_create_entry(
                     title=title,
                     data={
@@ -84,6 +94,8 @@ class NayaxConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_POLL_INTERVAL: user_input.get(
                             CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL
                         ),
+                        CONF_FIRST_DAY_OF_WEEK: first_dow_value,
+                        CONF_INCLUDE_RAW_DATA: DEFAULT_INCLUDE_RAW_DATA,
                     },
                 )
 
@@ -110,7 +122,24 @@ class NayaxOptionsFlow(OptionsFlow):
     ) -> ConfigFlowResult:
         """Manage the options."""
         if user_input is not None:
+            # Convert weekday name to number if provided as string
+            first_dow = user_input.get(CONF_FIRST_DAY_OF_WEEK)
+            if isinstance(first_dow, str):
+                user_input[CONF_FIRST_DAY_OF_WEEK] = WEEKDAY_OPTIONS.get(
+                    first_dow, DEFAULT_FIRST_DAY_OF_WEEK
+                )
             return self.async_create_entry(title="", data=user_input)
+
+        # Get current first day of week value and convert to name for display
+        current_first_dow = self.config_entry.options.get(
+            CONF_FIRST_DAY_OF_WEEK, DEFAULT_FIRST_DAY_OF_WEEK
+        )
+        # Convert number back to name for the dropdown
+        current_first_dow_name = "monday"
+        for name, value in WEEKDAY_OPTIONS.items():
+            if value == current_first_dow:
+                current_first_dow_name = name
+                break
 
         return self.async_show_form(
             step_id="init",
@@ -128,6 +157,10 @@ class NayaxOptionsFlow(OptionsFlow):
                             CONF_INCLUDE_RAW_DATA, DEFAULT_INCLUDE_RAW_DATA
                         ),
                     ): bool,
+                    vol.Optional(
+                        CONF_FIRST_DAY_OF_WEEK,
+                        default=current_first_dow_name,
+                    ): vol.In(list(WEEKDAY_OPTIONS.keys())),
                 }
             ),
         )

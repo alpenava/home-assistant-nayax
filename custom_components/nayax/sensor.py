@@ -29,6 +29,22 @@ from .const import (
     SENSOR_TYPE_LAST_SALE_PRODUCT,
     SENSOR_TYPE_LAST_SALE_TIME,
     SENSOR_TYPE_LAST_TRANSACTION_ID,
+    SENSOR_TYPE_SALES_6_MONTHS,
+    SENSOR_TYPE_SALES_6_MONTHS_COUNT,
+    SENSOR_TYPE_SALES_LAST_MONTH,
+    SENSOR_TYPE_SALES_LAST_MONTH_COUNT,
+    SENSOR_TYPE_SALES_LAST_WEEK,
+    SENSOR_TYPE_SALES_LAST_WEEK_COUNT,
+    SENSOR_TYPE_SALES_LAST_YEAR,
+    SENSOR_TYPE_SALES_LAST_YEAR_COUNT,
+    SENSOR_TYPE_SALES_THIS_MONTH,
+    SENSOR_TYPE_SALES_THIS_MONTH_COUNT,
+    SENSOR_TYPE_SALES_THIS_WEEK,
+    SENSOR_TYPE_SALES_THIS_WEEK_COUNT,
+    SENSOR_TYPE_SALES_THIS_YEAR,
+    SENSOR_TYPE_SALES_THIS_YEAR_COUNT,
+    SENSOR_TYPE_SALES_TODAY,
+    SENSOR_TYPE_SALES_TODAY_COUNT,
 )
 from .coordinator import NayaxCoordinator
 
@@ -73,6 +89,167 @@ SENSOR_DESCRIPTIONS: tuple[NayaxSensorEntityDescription, ...] = (
         name="Last Transaction ID",
         icon="mdi:identifier",
         value_fn=lambda data: data.get("transaction_id"),
+    ),
+)
+
+
+@dataclass(frozen=True, kw_only=True)
+class NayaxPeriodSensorEntityDescription(SensorEntityDescription):
+    """Describes a Nayax period sensor entity."""
+
+    period_key: str  # Key in period_totals (today, this_week, etc.)
+    value_type: str  # "amount" or "count"
+
+
+# Period sensor descriptions - Amount sensors
+PERIOD_AMOUNT_SENSOR_DESCRIPTIONS: tuple[NayaxPeriodSensorEntityDescription, ...] = (
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_SALES_TODAY,
+        name="Sales Today",
+        native_unit_of_measurement=CURRENCY_EURO,
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:calendar-today",
+        period_key="today",
+        value_type="amount",
+    ),
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_SALES_THIS_WEEK,
+        name="Sales This Week",
+        native_unit_of_measurement=CURRENCY_EURO,
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:calendar-week",
+        period_key="this_week",
+        value_type="amount",
+    ),
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_SALES_THIS_MONTH,
+        name="Sales This Month",
+        native_unit_of_measurement=CURRENCY_EURO,
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:calendar-month",
+        period_key="this_month",
+        value_type="amount",
+    ),
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_SALES_LAST_WEEK,
+        name="Sales Last Week",
+        native_unit_of_measurement=CURRENCY_EURO,
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:calendar-arrow-left",
+        period_key="last_week",
+        value_type="amount",
+    ),
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_SALES_LAST_MONTH,
+        name="Sales Last Month",
+        native_unit_of_measurement=CURRENCY_EURO,
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:calendar-arrow-left",
+        period_key="last_month",
+        value_type="amount",
+    ),
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_SALES_6_MONTHS,
+        name="Sales Last 6 Months",
+        native_unit_of_measurement=CURRENCY_EURO,
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:calendar-range",
+        period_key="6_months",
+        value_type="amount",
+    ),
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_SALES_THIS_YEAR,
+        name="Sales This Year",
+        native_unit_of_measurement=CURRENCY_EURO,
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:calendar",
+        period_key="this_year",
+        value_type="amount",
+    ),
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_SALES_LAST_YEAR,
+        name="Sales Last Year",
+        native_unit_of_measurement=CURRENCY_EURO,
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:calendar-arrow-left",
+        period_key="last_year",
+        value_type="amount",
+    ),
+)
+
+# Period sensor descriptions - Count sensors
+PERIOD_COUNT_SENSOR_DESCRIPTIONS: tuple[NayaxPeriodSensorEntityDescription, ...] = (
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_SALES_TODAY_COUNT,
+        name="Sales Today Count",
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:counter",
+        period_key="today",
+        value_type="count",
+    ),
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_SALES_THIS_WEEK_COUNT,
+        name="Sales This Week Count",
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:counter",
+        period_key="this_week",
+        value_type="count",
+    ),
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_SALES_THIS_MONTH_COUNT,
+        name="Sales This Month Count",
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:counter",
+        period_key="this_month",
+        value_type="count",
+    ),
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_SALES_LAST_WEEK_COUNT,
+        name="Sales Last Week Count",
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:counter",
+        period_key="last_week",
+        value_type="count",
+    ),
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_SALES_LAST_MONTH_COUNT,
+        name="Sales Last Month Count",
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:counter",
+        period_key="last_month",
+        value_type="count",
+    ),
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_SALES_6_MONTHS_COUNT,
+        name="Sales Last 6 Months Count",
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:counter",
+        period_key="6_months",
+        value_type="count",
+    ),
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_SALES_THIS_YEAR_COUNT,
+        name="Sales This Year Count",
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:counter",
+        period_key="this_year",
+        value_type="count",
+    ),
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_SALES_LAST_YEAR_COUNT,
+        name="Sales Last Year Count",
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:counter",
+        period_key="last_year",
+        value_type="count",
     ),
 )
 
@@ -137,17 +314,42 @@ async def async_setup_entry(
     """
     coordinator: NayaxCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
 
-    entities: list[NayaxSensor] = []
+    entities: list[SensorEntity] = []
 
     # Create sensors for each machine
     for machine_id, machine_info in coordinator.machines.items():
+        machine_name = machine_info.get("name", f"Machine {machine_id}")
+
+        # Last sale sensors (existing)
         for description in SENSOR_DESCRIPTIONS:
             entities.append(
                 NayaxSensor(
                     coordinator=coordinator,
                     description=description,
                     machine_id=machine_id,
-                    machine_name=machine_info.get("name", f"Machine {machine_id}"),
+                    machine_name=machine_name,
+                )
+            )
+
+        # Period amount sensors
+        for description in PERIOD_AMOUNT_SENSOR_DESCRIPTIONS:
+            entities.append(
+                NayaxPeriodSensor(
+                    coordinator=coordinator,
+                    description=description,
+                    machine_id=machine_id,
+                    machine_name=machine_name,
+                )
+            )
+
+        # Period count sensors
+        for description in PERIOD_COUNT_SENSOR_DESCRIPTIONS:
+            entities.append(
+                NayaxPeriodSensor(
+                    coordinator=coordinator,
+                    description=description,
+                    machine_id=machine_id,
+                    machine_name=machine_name,
                 )
             )
 
@@ -248,4 +450,64 @@ class NayaxSensor(CoordinatorEntity[NayaxCoordinator], SensorEntity):
             }
 
         return None
+
+
+class NayaxPeriodSensor(CoordinatorEntity[NayaxCoordinator], SensorEntity):
+    """Representation of a Nayax period total sensor."""
+
+    entity_description: NayaxPeriodSensorEntityDescription
+    _attr_attribution = ATTRIBUTION
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        coordinator: NayaxCoordinator,
+        description: NayaxPeriodSensorEntityDescription,
+        machine_id: str,
+        machine_name: str,
+    ) -> None:
+        """Initialize the period sensor.
+
+        Args:
+            coordinator: Data coordinator.
+            description: Sensor description.
+            machine_id: The machine ID.
+            machine_name: The machine display name.
+        """
+        super().__init__(coordinator)
+        self.entity_description = description
+        self._machine_id = machine_id
+        self._machine_name = machine_name
+
+        # Create unique ID
+        self._attr_unique_id = f"{DOMAIN}_{machine_id}_{description.key}"
+
+        # Set entity name (will be combined with device name)
+        self._attr_name = description.name
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device info to link this entity to the machine device."""
+        return {
+            "identifiers": {(DOMAIN, self._machine_id)},
+            "name": self._machine_name,
+            "manufacturer": MANUFACTURER,
+            "model": MODEL,
+        }
+
+    @property
+    def native_value(self) -> float | int:
+        """Return the sensor value."""
+        period_data = self.coordinator.get_period_total(
+            self._machine_id,
+            self.entity_description.period_key,
+        )
+
+        value = period_data.get(self.entity_description.value_type, 0)
+
+        # Round amount to 2 decimal places
+        if self.entity_description.value_type == "amount":
+            return round(value, 2)
+
+        return value
 

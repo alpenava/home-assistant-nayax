@@ -7,8 +7,10 @@ A Home Assistant custom integration that monitors Nayax vending machines via the
 - **Automatic Machine Discovery** — Machines are discovered automatically from your Nayax account
 - **Real-time Sale Events** — Fires `nayax_sale` events when successful transactions occur
 - **Sensor Entities** — Track last sale amount, product, time, and transaction ID per machine
+- **Period Totals** — Sales totals and counts for today, this week, this month, this year, and more
 - **Device Integration** — Each vending machine appears as a device in Home Assistant
 - **Configurable Polling** — Adjust how frequently sales are checked (default: 30 seconds)
+- **Configurable Week Start** — Define your first day of week for weekly totals
 - **Persistent State** — Survives Home Assistant restarts without duplicate notifications
 
 ## Requirements
@@ -70,6 +72,7 @@ config/
    - **Actor ID** — Your Nayax Actor ID from the Lynx platform
    - **API Token** — Your Nayax API token
    - **Polling Interval** — How often to check for new sales (10-300 seconds, default: 30)
+   - **First Day of Week** — Which day starts your week for weekly totals (default: Monday)
 
 The integration will automatically discover all vending machines associated with your account and register them as devices.
 
@@ -77,7 +80,9 @@ The integration will automatically discover all vending machines associated with
 
 ### Sensors
 
-Each vending machine device includes four sensor entities:
+Each vending machine device includes **20 sensor entities**:
+
+#### Last Sale Sensors
 
 | Sensor | Description | Example Value |
 |--------|-------------|---------------|
@@ -86,12 +91,41 @@ Each vending machine device includes four sensor entities:
 | **Last Sale Time** | Timestamp of last sale | `2026-01-08T14:29:30` |
 | **Last Transaction ID** | Transaction reference | `"6526108450"` |
 
-Sensors are named like: `sensor.<machine_name>_last_sale_amount`
+#### Period Total Sensors (Amount)
+
+| Sensor | Description | Resets |
+|--------|-------------|--------|
+| **Sales Today** | Total sales amount today | Midnight |
+| **Sales This Week** | Total sales amount this week | First day of week |
+| **Sales This Month** | Total sales amount this month | 1st of month |
+| **Sales Last Week** | Total sales amount from previous week | When new week starts |
+| **Sales Last Month** | Total sales amount from previous month | When new month starts |
+| **Sales Last 6 Months** | Rolling 6-month total | Monthly |
+| **Sales This Year** | Total sales amount this year | Jan 1st |
+| **Sales Last Year** | Total sales amount from previous year | Jan 1st |
+
+#### Period Total Sensors (Count)
+
+| Sensor | Description |
+|--------|-------------|
+| **Sales Today Count** | Number of transactions today |
+| **Sales This Week Count** | Number of transactions this week |
+| **Sales This Month Count** | Number of transactions this month |
+| **Sales Last Week Count** | Number of transactions last week |
+| **Sales Last Month Count** | Number of transactions last month |
+| **Sales Last 6 Months Count** | Number of transactions in last 6 months |
+| **Sales This Year Count** | Number of transactions this year |
+| **Sales Last Year Count** | Number of transactions last year |
+
+Sensors are named like: `sensor.<machine_name>_last_sale_amount` or `sensor.<machine_name>_sales_today`
 
 These sensors:
-- Update every poll cycle (default 30 seconds)
+- Last sale sensors update every poll cycle (default 30 seconds)
+- Period totals accumulate from detected sales (start at 0)
 - Have full history in Home Assistant recorder
 - Can be used in dashboards, automations, and conditions
+
+> **Note:** Period totals start at 0 and accumulate as sales are detected. Historical data from before the integration was installed is not available.
 
 ### Events
 
@@ -199,8 +233,11 @@ After setup, you can configure the integration:
 |--------|-------------|---------|
 | **Polling Interval** | How often to check for new sales (10-300 seconds) | 30 |
 | **Include raw transaction data** | Include the full Nayax transaction object in events | Enabled |
+| **First Day of Week** | Which day starts your week for weekly totals | Monday |
 
 > **Tip:** Disable "Include raw transaction data" if you only need the extracted fields and want smaller event payloads for Node-RED or other automation tools.
+
+> **Tip:** Set "First Day of Week" to Sunday if your business week starts on Sunday (common in the US).
 
 ## Troubleshooting
 
@@ -216,11 +253,17 @@ After setup, you can configure the integration:
 - Check the polling interval isn't set too high
 - Look for errors in the Home Assistant logs
 
-### Sensors show "Unknown" or no data
+### Last sale sensors show "Unknown"
 
-- Sensors only populate after the first successful sale is detected
+- Last sale sensors only populate after the first successful sale is detected
 - Ensure there has been at least one sale with SettlementValue > 0
 - Check if the API is returning sales data in the debug logs
+
+### Period totals show 0
+
+- Period totals start at 0 and accumulate from detected sales only
+- Historical data from before installation is not fetched from Nayax
+- Totals will build up over time as new sales occur
 
 ### Enable Debug Logging
 
@@ -238,9 +281,11 @@ logger:
 1. On startup, the integration calls the Nayax API to discover all machines
 2. Every 30 seconds (configurable), it polls each machine's recent sales
 3. New successful transactions (SettlementValue > 0) trigger `nayax_sale` events
-4. Sensor entities are updated with the latest sale data
-5. Transaction IDs are tracked to prevent duplicate event notifications
-6. Machine discovery runs every 5 minutes to detect new machines
+4. Last sale sensor entities are updated with transaction details
+5. Period totals are incremented (today, week, month, year)
+6. Transaction IDs are tracked to prevent duplicate event notifications
+7. Machine discovery runs every 5 minutes to detect new machines
+8. At midnight/week start/month start/year start, period totals roll over appropriately
 
 ## Limitations
 
