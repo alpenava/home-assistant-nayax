@@ -48,6 +48,7 @@ SENSOR_TYPE_LAST_TRANSACTION_ID: Final = "last_transaction_id"
 
 # Sensor types - Period totals (amount)
 SENSOR_TYPE_SALES_TODAY: Final = "sales_today"
+SENSOR_TYPE_SALES_YESTERDAY: Final = "sales_yesterday"
 SENSOR_TYPE_SALES_THIS_WEEK: Final = "sales_this_week"
 SENSOR_TYPE_SALES_THIS_MONTH: Final = "sales_this_month"
 SENSOR_TYPE_SALES_LAST_WEEK: Final = "sales_last_week"
@@ -58,6 +59,7 @@ SENSOR_TYPE_SALES_LAST_YEAR: Final = "sales_last_year"
 
 # Sensor types - Period totals (count)
 SENSOR_TYPE_SALES_TODAY_COUNT: Final = "sales_today_count"
+SENSOR_TYPE_SALES_YESTERDAY_COUNT: Final = "sales_yesterday_count"
 SENSOR_TYPE_SALES_THIS_WEEK_COUNT: Final = "sales_this_week_count"
 SENSOR_TYPE_SALES_THIS_MONTH_COUNT: Final = "sales_this_month_count"
 SENSOR_TYPE_SALES_LAST_WEEK_COUNT: Final = "sales_last_week_count"

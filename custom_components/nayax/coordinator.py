@@ -11,6 +11,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .api import NayaxApiClient, NayaxApiError
 from .const import (
@@ -548,52 +549,65 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self, period: str
     ) -> tuple[datetime | None, datetime | None]:
         """Get start and end datetime for a period."""
-        now = datetime.now(timezone.utc)
+        # Get current time in local timezone
+        now_local = dt_util.now()
         first_dow = self.entry.options.get(
             CONF_FIRST_DAY_OF_WEEK, DEFAULT_FIRST_DAY_OF_WEEK
         )
 
-        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        # Calculate today boundaries in local time, then convert to UTC
+        today_start_local = dt_util.start_of_local_day()
+        today_start = dt_util.as_utc(today_start_local)
         tomorrow_start = today_start + timedelta(days=1)
+        yesterday_start = today_start - timedelta(days=1)
+        yesterday_end = today_start
 
-        # Week calculations
-        days_since_week_start = (now.weekday() - first_dow) % 7
-        this_week_start = today_start - timedelta(days=days_since_week_start)
+        # Week calculations (based on local time)
+        days_since_week_start = (now_local.weekday() - first_dow) % 7
+        this_week_start_local = today_start_local - timedelta(days=days_since_week_start)
+        this_week_start = dt_util.as_utc(this_week_start_local)
         last_week_start = this_week_start - timedelta(days=7)
         last_week_end = this_week_start
 
-        # Month calculations
-        this_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        if now.month == 1:
-            last_month_start = now.replace(
-                year=now.year - 1, month=12, day=1,
+        # Month calculations (based on local time)
+        this_month_start_local = now_local.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        this_month_start = dt_util.as_utc(this_month_start_local)
+        
+        if now_local.month == 1:
+            last_month_start_local = now_local.replace(
+                year=now_local.year - 1, month=12, day=1,
                 hour=0, minute=0, second=0, microsecond=0
             )
         else:
-            last_month_start = now.replace(
-                month=now.month - 1, day=1,
+            last_month_start_local = now_local.replace(
+                month=now_local.month - 1, day=1,
                 hour=0, minute=0, second=0, microsecond=0
             )
+        last_month_start = dt_util.as_utc(last_month_start_local)
         last_month_end = this_month_start
 
-        # Year calculations
-        this_year_start = now.replace(
+        # Year calculations (based on local time)
+        this_year_start_local = now_local.replace(
             month=1, day=1, hour=0, minute=0, second=0, microsecond=0
         )
-        last_year_start = now.replace(
-            year=now.year - 1, month=1, day=1,
+        this_year_start = dt_util.as_utc(this_year_start_local)
+        last_year_start_local = now_local.replace(
+            year=now_local.year - 1, month=1, day=1,
             hour=0, minute=0, second=0, microsecond=0
         )
+        last_year_start = dt_util.as_utc(last_year_start_local)
         last_year_end = this_year_start
 
-        # 6 months rolling
-        six_months_ago = now - timedelta(days=180)
-        six_months_start = six_months_ago.replace(
+        # 6 months rolling (based on local time)
+        six_months_ago_local = now_local - timedelta(days=180)
+        six_months_start_local = six_months_ago_local.replace(
             day=1, hour=0, minute=0, second=0, microsecond=0
         )
+        six_months_start = dt_util.as_utc(six_months_start_local)
 
         period_ranges = {
             "today": (today_start, tomorrow_start),
+            "yesterday": (yesterday_start, yesterday_end),
             "this_week": (this_week_start, tomorrow_start),
             "this_month": (this_month_start, tomorrow_start),
             "this_year": (this_year_start, tomorrow_start),

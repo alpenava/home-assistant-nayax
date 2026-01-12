@@ -45,6 +45,8 @@ from .const import (
     SENSOR_TYPE_SALES_THIS_YEAR_COUNT,
     SENSOR_TYPE_SALES_TODAY,
     SENSOR_TYPE_SALES_TODAY_COUNT,
+    SENSOR_TYPE_SALES_YESTERDAY,
+    SENSOR_TYPE_SALES_YESTERDAY_COUNT,
 )
 from .coordinator import NayaxCoordinator
 
@@ -111,6 +113,16 @@ PERIOD_AMOUNT_SENSOR_DESCRIPTIONS: tuple[NayaxPeriodSensorEntityDescription, ...
         state_class=SensorStateClass.TOTAL,
         icon="mdi:calendar-today",
         period_key="today",
+        value_type="amount",
+    ),
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_SALES_YESTERDAY,
+        name="Sales Yesterday",
+        native_unit_of_measurement=CURRENCY_EURO,
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:calendar-arrow-left",
+        period_key="yesterday",
         value_type="amount",
     ),
     NayaxPeriodSensorEntityDescription(
@@ -193,6 +205,14 @@ PERIOD_COUNT_SENSOR_DESCRIPTIONS: tuple[NayaxPeriodSensorEntityDescription, ...]
         state_class=SensorStateClass.TOTAL,
         icon="mdi:counter",
         period_key="today",
+        value_type="count",
+    ),
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_SALES_YESTERDAY_COUNT,
+        name="Sales Yesterday Count",
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:counter",
+        period_key="yesterday",
         value_type="count",
     ),
     NayaxPeriodSensorEntityDescription(
