@@ -545,6 +545,40 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         return {"amount": round(total_amount, 2), "count": total_count}
 
+    def get_aggregate_period_total(self, period: str) -> dict[str, Any]:
+        """Calculate aggregate period total across all machines from raw transaction amounts.
+        
+        This method sums raw transaction amounts before rounding to avoid precision loss
+        when aggregating across multiple machines.
+        
+        Args:
+            period: Period key (e.g., "today", "this_month", "last_month").
+            
+        Returns:
+            Dictionary with "amount" (unrounded) and "count" keys.
+        """
+        start_dt, end_dt = self._get_period_date_range(period)
+        if start_dt is None:
+            return {"amount": 0.0, "count": 0}
+
+        total_amount = 0.0
+        total_count = 0
+
+        # Sum raw amounts from all machines
+        for machine_id, machine_txs in self._transaction_history.items():
+            for tx_data in machine_txs.values():
+                timestamp_str = tx_data.get("timestamp", "")
+                tx_dt = self._parse_timestamp(timestamp_str)
+
+                if tx_dt is None:
+                    continue
+
+                if start_dt <= tx_dt < end_dt:
+                    total_amount += tx_data.get("amount", 0.0)
+                    total_count += 1
+
+        return {"amount": total_amount, "count": total_count}
+
     def _get_period_date_range(
         self, period: str
     ) -> tuple[datetime | None, datetime | None]:

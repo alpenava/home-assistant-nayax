@@ -68,6 +68,11 @@ SENSOR_TYPE_SALES_6_MONTHS_COUNT: Final = "sales_6_months_count"
 SENSOR_TYPE_SALES_THIS_YEAR_COUNT: Final = "sales_this_year_count"
 SENSOR_TYPE_SALES_LAST_YEAR_COUNT: Final = "sales_last_year_count"
 
+# Sensor types - Aggregate totals (across all machines)
+SENSOR_TYPE_ALL_SALES_TODAY: Final = "all_sales_today"
+SENSOR_TYPE_ALL_SALES_THIS_MONTH: Final = "all_sales_this_month"
+SENSOR_TYPE_ALL_SALES_LAST_MONTH: Final = "all_sales_last_month"
+
 # Attribution
 ATTRIBUTION: Final = "Data provided by Nayax Lynx API"
 

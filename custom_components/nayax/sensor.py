@@ -25,6 +25,9 @@ from .const import (
     DOMAIN,
     MANUFACTURER,
     MODEL,
+    SENSOR_TYPE_ALL_SALES_LAST_MONTH,
+    SENSOR_TYPE_ALL_SALES_THIS_MONTH,
+    SENSOR_TYPE_ALL_SALES_TODAY,
     SENSOR_TYPE_LAST_SALE_AMOUNT,
     SENSOR_TYPE_LAST_SALE_PRODUCT,
     SENSOR_TYPE_LAST_SALE_TIME,
@@ -273,6 +276,40 @@ PERIOD_COUNT_SENSOR_DESCRIPTIONS: tuple[NayaxPeriodSensorEntityDescription, ...]
     ),
 )
 
+# Aggregate sensor descriptions (across all machines)
+AGGREGATE_SENSOR_DESCRIPTIONS: tuple[NayaxPeriodSensorEntityDescription, ...] = (
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_ALL_SALES_TODAY,
+        name="All Sales Today",
+        native_unit_of_measurement=CURRENCY_EURO,
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:calendar-today",
+        period_key="today",
+        value_type="amount",
+    ),
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_ALL_SALES_THIS_MONTH,
+        name="All Sales This Month",
+        native_unit_of_measurement=CURRENCY_EURO,
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:calendar-month",
+        period_key="this_month",
+        value_type="amount",
+    ),
+    NayaxPeriodSensorEntityDescription(
+        key=SENSOR_TYPE_ALL_SALES_LAST_MONTH,
+        name="All Sales Last Month",
+        native_unit_of_measurement=CURRENCY_EURO,
+        device_class=SensorDeviceClass.MONETARY,
+        state_class=SensorStateClass.TOTAL,
+        icon="mdi:calendar-arrow-left",
+        period_key="last_month",
+        value_type="amount",
+    ),
+)
+
 
 def _parse_timestamp(timestamp_str: str | None) -> datetime | None:
     """Parse a timestamp string to datetime.
@@ -372,6 +409,15 @@ async def async_setup_entry(
                     machine_name=machine_name,
                 )
             )
+
+    # Create aggregate sensors (once, not per machine)
+    for description in AGGREGATE_SENSOR_DESCRIPTIONS:
+        entities.append(
+            NayaxAggregateSensor(
+                coordinator=coordinator,
+                description=description,
+            )
+        )
 
     async_add_entities(entities)
 
@@ -530,4 +576,76 @@ class NayaxPeriodSensor(CoordinatorEntity[NayaxCoordinator], SensorEntity):
             return round(value, 2)
 
         return value
+
+
+class NayaxAggregateSensor(CoordinatorEntity[NayaxCoordinator], SensorEntity):
+    """Representation of an aggregate Nayax sensor that sums across all machines."""
+
+    entity_description: NayaxPeriodSensorEntityDescription
+    _attr_attribution = ATTRIBUTION
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        coordinator: NayaxCoordinator,
+        description: NayaxPeriodSensorEntityDescription,
+    ) -> None:
+        """Initialize the aggregate sensor.
+
+        Args:
+            coordinator: Data coordinator.
+            description: Sensor description.
+        """
+        super().__init__(coordinator)
+        self.entity_description = description
+
+        # Track previous value to avoid unnecessary state updates
+        # Use sentinel to ensure first update always writes state
+        self._previous_value: Any = _UNSET
+
+        # Create unique ID (no machine_id for aggregate sensors)
+        self._attr_unique_id = f"{DOMAIN}_all_{description.key}"
+
+        # Set entity name
+        self._attr_name = description.name
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device info for the virtual 'All Machines' device."""
+        return {
+            "identifiers": {(DOMAIN, "all_machines")},
+            "name": "All Machines",
+            "manufacturer": MANUFACTURER,
+            "model": MODEL,
+        }
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator.
+
+        Always writes state on the first update (even if None).
+        On subsequent updates, only writes state if the value changed.
+        This prevents unnecessary state updates when no machines have new transactions.
+        """
+        current_value = self.native_value
+
+        # Write state if first update (previous is sentinel) or value changed
+        if self._previous_value is _UNSET or current_value != self._previous_value:
+            self._previous_value = current_value
+            self.async_write_ha_state()
+
+    @property
+    def native_value(self) -> float:
+        """Return the aggregated sensor value across all machines.
+        
+        Uses raw transaction amounts to avoid precision loss from
+        rounding per-machine totals before aggregation.
+        """
+        # Get aggregate total from raw transaction amounts (unrounded)
+        aggregate_data = self.coordinator.get_aggregate_period_total(
+            self.entity_description.period_key
+        )
+        
+        # Round once at the end
+        return round(aggregate_data.get("amount", 0.0), 2)
 
