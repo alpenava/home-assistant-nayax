@@ -11,7 +11,7 @@ A Home Assistant custom integration that monitors Nayax vending machines via the
 - **Device Integration** — Each vending machine appears as a device in Home Assistant
 - **Configurable Polling** — Adjust how frequently sales are checked (default: 30 seconds)
 - **Configurable Week Start** — Define your first day of week for weekly totals
-- **Persistent State** — Survives Home Assistant restarts without duplicate notifications
+- **Persistent State** — Transaction history is saved to Home Assistant storage after each poll (using a deep copy so updates are always detected) and survives restarts without duplicate notifications
 
 ## Requirements
 
@@ -234,10 +234,13 @@ After setup, you can configure the integration:
 | **Polling Interval** | How often to check for new sales (10-300 seconds) | 30 |
 | **Include raw transaction data** | Include the full Nayax transaction object in events | Enabled |
 | **First Day of Week** | Which day starts your week for weekly totals | Monday |
+| **Excluded product prefixes** | Comma-separated product name prefixes omitted from period amount/count sensors (still stored; events still fire) | `Initiale Rechnung` |
 
 > **Tip:** Disable "Include raw transaction data" if you only need the extracted fields and want smaller event payloads for Node-RED or other automation tools.
 
 > **Tip:** Set "First Day of Week" to Sunday if your business week starts on Sunday (common in the US).
+
+> **Tip:** Use **Excluded product prefixes** to drop Nayax synthetic lines (e.g. initial balance / “Initiale Rechnung”) from sales totals while keeping them in history. Clear the field to count every stored transaction.
 
 ## Troubleshooting
 
@@ -265,6 +268,10 @@ After setup, you can configure the integration:
 - Historical data from before installation is not fetched from Nayax
 - Totals will build up over time as new sales occur
 
+### Period totals dropped suddenly after reload or config change
+
+Older versions used a shallow copy when loading `transaction_history`, so new sales updated memory but Home Assistant often **did not write** updates to `.storage/core.config_entries`. After a reload, totals could fall to stale disk data. **Current versions** deep-copy on load and on save so every poll triggers a real persist. After upgrading, wait one poll cycle and confirm transaction counts in **Developer tools → YAML → core.config_entries** (search for `nayax`) match what you expect.
+
 ### Enable Debug Logging
 
 Add to your `configuration.yaml`:
@@ -284,8 +291,9 @@ logger:
 4. Last sale sensor entities are updated with transaction details
 5. Period totals are incremented (today, week, month, year)
 6. Transaction IDs are tracked to prevent duplicate event notifications
-7. Machine discovery runs every 5 minutes to detect new machines
-8. At midnight/week start/month start/year start, period totals roll over appropriately
+7. After each poll, the full transaction history is **deep-copied** into the config entry so storage updates are not skipped
+8. Machine discovery runs every 5 minutes to detect new machines
+9. At midnight/week start/month start/year start, period totals roll over appropriately
 
 ## Limitations
 

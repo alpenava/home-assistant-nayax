@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 from datetime import datetime, timedelta, timezone
 import logging
 from typing import Any
@@ -15,8 +16,10 @@ from homeassistant.util import dt as dt_util
 
 from .api import NayaxApiClient, NayaxApiError
 from .const import (
+    CONF_EXCLUDED_PRODUCTS,
     CONF_FIRST_DAY_OF_WEEK,
     CONF_INCLUDE_RAW_DATA,
+    DEFAULT_EXCLUDED_PRODUCTS,
     DEFAULT_FIRST_DAY_OF_WEEK,
     DEFAULT_INCLUDE_RAW_DATA,
     DEFAULT_MACHINE_DISCOVERY_INTERVAL,
@@ -65,7 +68,9 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Load new transaction history format
         stored_history = self.entry.data.get("transaction_history", {})
         if isinstance(stored_history, dict):
-            self._transaction_history = stored_history.copy()
+            # Deep copy so mutations are not shared with entry.data; otherwise
+            # async_update_entry sees no change and skips persisting to disk.
+            self._transaction_history = copy.deepcopy(stored_history)
             total_tx = sum(len(txs) for txs in self._transaction_history.values())
             _LOGGER.debug(
                 "Loaded %d transactions across %d machines",
@@ -113,9 +118,15 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _persist_state(self) -> None:
         """Persist current state to config entry."""
+        total_tx = sum(len(txs) for txs in self._transaction_history.values())
+        _LOGGER.debug(
+            "Persisting %d transactions across %d machines",
+            total_tx,
+            len(self._transaction_history),
+        )
         new_data = {
             **self.entry.data,
-            "transaction_history": self._transaction_history,
+            "transaction_history": copy.deepcopy(self._transaction_history),
         }
         # Remove old format keys after migration
         new_data.pop("last_transactions", None)
@@ -461,6 +472,30 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         return None
 
+    def _excluded_product_prefixes(self) -> tuple[str, ...]:
+        """Product name prefixes excluded from period amount/count totals."""
+        raw = self.entry.options.get(CONF_EXCLUDED_PRODUCTS)
+        if raw is None:
+            return tuple(
+                p.strip()
+                for p in DEFAULT_EXCLUDED_PRODUCTS.split(",")
+                if p.strip()
+            )
+        if isinstance(raw, list):
+            return tuple(str(x).strip() for x in raw if str(x).strip())
+        s = str(raw).strip()
+        if not s:
+            return ()
+        return tuple(p.strip() for p in s.split(",") if p.strip())
+
+    def _is_excluded_from_period_totals(self, tx_data: dict[str, Any]) -> bool:
+        """Return True if this transaction should not count toward period totals."""
+        product = (tx_data.get("product_name") or "").strip()
+        for prefix in self._excluded_product_prefixes():
+            if prefix and product.startswith(prefix):
+                return True
+        return False
+
     # -------------------------------------------------------------------------
     # Public Methods for Sensors
     # -------------------------------------------------------------------------
@@ -516,6 +551,8 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 continue
 
             if start_dt <= tx_dt < end_dt:
+                if self._is_excluded_from_period_totals(tx_data):
+                    continue
                 total_amount += tx_data.get("amount", 0.0)
                 total_count += 1
 
@@ -550,6 +587,8 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     continue
 
                 if start_dt <= tx_dt < end_dt:
+                    if self._is_excluded_from_period_totals(tx_data):
+                        continue
                     total_amount += tx_data.get("amount", 0.0)
                     total_count += 1
 

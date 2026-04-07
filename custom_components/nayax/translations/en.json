@@ -34,12 +34,14 @@
         "data": {
           "poll_interval": "Polling Interval (seconds)",
           "include_raw_data": "Include raw transaction data in events",
-          "first_day_of_week": "First Day of Week"
+          "first_day_of_week": "First Day of Week",
+          "excluded_products": "Excluded product prefixes (period totals)"
         },
         "data_description": {
           "poll_interval": "How often to check for new sales (10-300 seconds)",
           "include_raw_data": "When enabled, the full Nayax transaction object is included in nayax_sale events",
-          "first_day_of_week": "Start of week for weekly sales totals"
+          "first_day_of_week": "Start of week for weekly sales totals",
+          "excluded_products": "Comma-separated prefixes. Transactions whose product name starts with any prefix are omitted from period amount and count sensors (still stored and still fire events). Default excludes Nayax synthetic lines such as Initiale Rechnung."
         }
       }
     }

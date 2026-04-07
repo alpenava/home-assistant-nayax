@@ -16,9 +16,11 @@ from .api import NayaxApiClient, NayaxAuthError, NayaxConnectionError
 from .const import (
     CONF_ACTOR_ID,
     CONF_API_TOKEN,
+    CONF_EXCLUDED_PRODUCTS,
     CONF_FIRST_DAY_OF_WEEK,
     CONF_INCLUDE_RAW_DATA,
     CONF_POLL_INTERVAL,
+    DEFAULT_EXCLUDED_PRODUCTS,
     DEFAULT_FIRST_DAY_OF_WEEK,
     DEFAULT_INCLUDE_RAW_DATA,
     DEFAULT_POLL_INTERVAL,
@@ -96,6 +98,7 @@ class NayaxConfigFlow(ConfigFlow, domain=DOMAIN):
                         ),
                         CONF_FIRST_DAY_OF_WEEK: first_dow_value,
                         CONF_INCLUDE_RAW_DATA: DEFAULT_INCLUDE_RAW_DATA,
+                        CONF_EXCLUDED_PRODUCTS: DEFAULT_EXCLUDED_PRODUCTS,
                     },
                 )
 
@@ -141,6 +144,12 @@ class NayaxOptionsFlow(OptionsFlow):
                 current_first_dow_name = name
                 break
 
+        excluded_default = self.config_entry.options.get(
+            CONF_EXCLUDED_PRODUCTS, DEFAULT_EXCLUDED_PRODUCTS
+        )
+        if isinstance(excluded_default, list):
+            excluded_default = ", ".join(str(x) for x in excluded_default if x)
+
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
@@ -161,6 +170,10 @@ class NayaxOptionsFlow(OptionsFlow):
                         CONF_FIRST_DAY_OF_WEEK,
                         default=current_first_dow_name,
                     ): vol.In(list(WEEKDAY_OPTIONS.keys())),
+                    vol.Optional(
+                        CONF_EXCLUDED_PRODUCTS,
+                        default=excluded_default,
+                    ): str,
                 }
             ),
         )

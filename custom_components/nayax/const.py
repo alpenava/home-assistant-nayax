@@ -15,12 +15,15 @@ CONF_API_TOKEN: Final = "api_token"
 CONF_POLL_INTERVAL: Final = "poll_interval"
 CONF_INCLUDE_RAW_DATA: Final = "include_raw_data"
 CONF_FIRST_DAY_OF_WEEK: Final = "first_day_of_week"
+CONF_EXCLUDED_PRODUCTS: Final = "excluded_products"
 
 # Default values
 DEFAULT_POLL_INTERVAL: Final = 30  # seconds
 DEFAULT_MACHINE_DISCOVERY_INTERVAL: Final = 300  # 5 minutes
 DEFAULT_INCLUDE_RAW_DATA: Final = True  # Include raw transaction in events
 DEFAULT_FIRST_DAY_OF_WEEK: Final = 0  # Monday (0=Mon, 6=Sun)
+# Comma-separated product name prefixes excluded from period totals (e.g. synthetic Nayax lines)
+DEFAULT_EXCLUDED_PRODUCTS: Final = "Initiale Rechnung"
 
 # First day of week options (value = Python weekday, 0=Monday, 6=Sunday)
 WEEKDAY_OPTIONS: Final = {
