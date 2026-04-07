@@ -248,7 +248,6 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         machine_history = self._transaction_history[machine_id]
         new_transactions = 0
-        updated_transactions = 0
 
         # Process ALL transactions from the response
         for sale in sales:
@@ -286,35 +285,12 @@ class NayaxCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
                 self._fire_sale_event(sale_data, sale)
 
-            else:
-                # EXISTING transaction - check if data changed
-                existing = machine_history[transaction_id]
-                if self._transaction_changed(existing, sale_data):
-                    machine_history[transaction_id] = sale_data
-                    updated_transactions += 1
-                    _LOGGER.debug(
-                        "Updated transaction %s for machine %s",
-                        transaction_id,
-                        machine_id,
-                    )
-
-        if new_transactions > 0 or updated_transactions > 0:
+        if new_transactions > 0:
             _LOGGER.debug(
-                "Machine %s: %d new, %d updated transactions",
+                "Machine %s: %d new transactions",
                 machine_id,
                 new_transactions,
-                updated_transactions,
             )
-
-    def _transaction_changed(
-        self, existing: dict[str, Any], new_data: dict[str, Any]
-    ) -> bool:
-        """Check if transaction data has changed."""
-        fields_to_compare = ["amount", "product_name", "timestamp"]
-        for field in fields_to_compare:
-            if existing.get(field) != new_data.get(field):
-                return True
-        return False
 
     def _get_settlement_value(self, sale: dict[str, Any]) -> float | None:
         """Extract settlement value from a sale record."""
